@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  # backend
+  telemetry-server:
+    image: universal-telemetry-server
+    ports:
+      - "8080:8080"
+
+  # simulator
+  telemetry-simulator:
+    image: universal-telemetry-simulator
+    environment:
+      - SERVER_URL=http://telemetry-server:8080
+    depends_on:
+      - telemetry-server
