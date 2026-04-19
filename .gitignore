@@ -39,3 +39,18 @@
 
 # debug information files
 *.dwo
+
+# Qt compiling
+build-*/
+CMakeUserPresets.json
+*.user
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Cartelle di sistema
+.DS_Store
+.vscode
+.idea
