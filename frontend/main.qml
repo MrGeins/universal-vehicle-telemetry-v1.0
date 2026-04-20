@@ -1,3 +1,6 @@
+// ─────────────────────────────────────────────────────────────────────────────
+//  Universal Telemetry Frontend v1.0
+// ─────────────────────────────────────────────────────────────────────────────
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -122,21 +125,21 @@ ApplicationWindow {
         xhr.onreadystatechange=function(){
             if(xhr.readyState!==XMLHttpRequest.DONE || xhr.status!==200) return
             var m=JSON.parse(xhr.responseText)
-            var backendStatus = m.status||"IDLE"
+            var backendStatus = m.status || "IDLE"
 
-            if (missionStatus === "IDLE" && backendStatus === "ERROR") return
+            // Guard: if we already reset locally (missionStatus="IDLE"),
+            // ignore any stale ERROR the backend might still be returning
+            // while the reset XHR is still in flight.
+            if(missionStatus === "IDLE" && backendStatus === "ERROR") return
 
             missionStatus = backendStatus
-            if(missionStatus==="ERROR"){
-                errorMessage=m.error_message||"Unknown simulator error"
-                errorVisible=true
-                telemetryActive=false
-            } else if(missionStatus==="IDLE" || missionStatus==="PENDING"){
-                errorVisible=false
+            if(backendStatus === "ERROR"){
+                errorMessage = m.error_message || "Unknown simulator error"
+                errorVisible = true
+                telemetryActive = false
             }
         }
-        xhr.open("GET","http://localhost:8080/api/mission",true);
-        xhr.send()
+        xhr.open("GET","http://localhost:8080/api/mission",true); xhr.send()
     }
 
     function updateUI(data) {
@@ -340,8 +343,11 @@ ApplicationWindow {
 
                                     onClicked: {
                                         if(showStop){
+                                            // Kill the error-detection timer immediately so
+                                            // fetchMissionStatus() cannot re-show the banner
+                                            // while the reset XHR is still in flight.
                                             missionStatus = "IDLE"
-                                            errorVisible = false
+                                            errorVisible  = false
 
                                             var xhr=new XMLHttpRequest()
                                             xhr.open("POST","http://localhost:8080/api/reset",true)
@@ -352,10 +358,7 @@ ApplicationWindow {
                                             xhr.send()
                                         } else {
                                             if(inputOrigin.text.trim()===""||inputDest.text.trim()==="") return
-
-                                            resetDashboard()
-                                            errorVisible=false;
-                                            errorMessage=""
+                                            errorVisible=false; errorMessage=""
                                             var mxhr=new XMLHttpRequest()
                                             mxhr.open("POST","http://localhost:8080/api/mission",true)
                                             mxhr.setRequestHeader("Content-Type","application/json")
@@ -621,18 +624,19 @@ ApplicationWindow {
                 color:dismissMa.pressed?Qt.rgba(1,1,1,0.25):Qt.rgba(1,1,1,0.12)
                 border{color:Qt.rgba(1,1,1,0.3);width:1}
                 Text{anchors.centerIn:parent;text:"✕";color:"white";font{pixelSize:14}}
-
                 MouseArea {
-                    id: dismissMa
-                    anchors.fill: parent
+                    id:dismissMa; anchors.fill:parent
                     onClicked: {
+                        // Immediately neutralise error state so the 1-s timer
+                        // cannot re-show the banner before the reset XHR completes.
                         missionStatus = "IDLE"
-                        errorVisible = false
-
+                        errorVisible  = false
+                        errorMessage  = ""
                         var xhr = new XMLHttpRequest()
-                        xhr.open("POST", "http://localhost:8080/api/reset", true)
+                        xhr.open("POST","http://localhost:8080/api/reset",true)
                         xhr.onreadystatechange = function() {
-                            if (xhr.readyState === XMLHttpRequest.DONE) resetDashboard()
+                            if (xhr.readyState === XMLHttpRequest.DONE)
+                                resetDashboard()
                         }
                         xhr.send()
                     }

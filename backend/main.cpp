@@ -1,12 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-//  Universal Telemetry Backend  –  v3.0
-//  Build: g++ -std=c++17 -O2 -o server telemetry_server.cpp -lpthread
-//
-//  v3 changes:
-//    • POST /api/telemetry rejected (409) when mission is IDLE/ERROR/COMPLETED
-//      → fixes "old mission re-proposes after STOP" bug
-//    • POST /api/mission supports status=ERROR|COMPLETED from simulator
-//    • GET /api/mission always returns error_message field
+//  Universal Telemetry Backend v1.0
 // ─────────────────────────────────────────────────────────────────────────────
 #include <httplib.h>
 #include <nlohmann/json.hpp>
@@ -95,7 +88,7 @@ int main() {
 
     std::cout << col::BOLD << col::CYAN
               << "╔════════════════════════════════════════╗\n"
-              << "║   Universal Telemetry Backend  v3.0   ║\n"
+              << "║       Universal Telemetry Backend      ║\n"
               << "╚════════════════════════════════════════╝\n" << col::RST;
 
     svr.set_pre_routing_handler([](const httplib::Request&, httplib::Response& res) {

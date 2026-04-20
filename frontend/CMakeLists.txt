@@ -8,7 +8,7 @@ set(CMAKE_AUTOUIC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Quick Charts Network QuickControls2 Location Positioning)
 
-qt_add_executable(dashboard_app main.cpp)
+qt_add_executable(dashboard_app dashboard.cpp)
 
 qt_add_qml_module(dashboard_app
     URI TelemetryUI

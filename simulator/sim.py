@@ -1,5 +1,5 @@
 """
-Universal Telemetry Simulator
+Universal Telemetry Simulator v1.0
 
 Routing matrix:
   CAR / MOTO / TRUCK / BICYCLE / PEDESTRIAN  →  OpenRouteService
@@ -172,20 +172,16 @@ def next_service_departure() -> str:
 # ── Geocoding (ORS) ───────────────────────────────────────────────────────────
 def geocode(query: str) -> List[float]:
     """Return [lon, lat] via ORS Geocoding."""
-    headers = {"User-Agent": "UniversalTelemetrySimulator"}
-
-    try:
-        r = requests.get("https://nominatim.openstreetmap.org/search",
-                         params={"q": query, "format": "json", "limit": 1},
-                         headers=headers, timeout=CONFIG["REQUEST_TIMEOUT_S"])
-        if r.status_code == 200 and r.json():
-            res = r.json()[0]
-            log.info("Geocoding: %s -> %s, %s", query, res["lat"], res["lon"])
-            return [float(res["lon"]), float(res["lat"])]
-    except Exception as e:
-        log.warning("Nominatim fallito: %s", e)
-
-    raise ValueError(f"Luogo non trovato: '{query}'. Prova a essere più specifico.")
+    r = requests.get(
+        "https://api.openrouteservice.org/geocode/search",
+        params={"api_key": CONFIG["ORS_API_KEY"], "text": query, "size": 1},
+        timeout=CONFIG["REQUEST_TIMEOUT_S"],
+    )
+    r.raise_for_status()
+    features = r.json().get("features", [])
+    if not features:
+        raise ValueError(f"Place not found: {query!r}")
+    return features[0]["geometry"]["coordinates"]   # [lon, lat]
 
 # ── Airport search via Nominatim (replaces Overpass, no API key needed) ───────
 def find_nearest_airport(city_name: str, city_lat: float,
